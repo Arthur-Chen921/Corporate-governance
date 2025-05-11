@@ -92,68 +92,116 @@ if page == "冲突场景模拟":
 elif page == "仲裁工作流":
     st.header("⚙️ 三阶治理工作流演示")
     
-    tab1, tab2, tab3 = st.tabs(["冲突识别", "决策仲裁", "执行跟踪"])
+    tab1, tab2, tab3, tab4 = st.tabs(["冲突识别", "仲裁会议", "系统连携", "执行跟踪"])
     
-    with tab1:
-        st.subheader("阶段1：冲突分类矩阵")
-        matrix_df = pd.DataFrame([
-            ["单一指标超标", "自动补偿谈判", "2小时"],
-            ["双重目标冲突", "部门联席预审", "8小时"],
-            ["三重冲突+置信差异", "AI仲裁委员会", "24小时"]
-        ], columns=["冲突类型", "处理通道", "时限"])
-        
-        st.dataframe(matrix_df.style.highlight_max(axis=0), 
-                    use_container_width=True)
-        
-        st.write("**当前冲突检测**:")
-        st.json({
-            "冲突类型": "三重冲突+置信差异",
-            "触发流程": "提交AI仲裁委员会",
-            "处理时限": "24小时"
-        })
-        
+    # 新增仲裁会议看板
     with tab2:
-        st.subheader("阶段2：仲裁决策看板")
+        st.subheader("仲裁会议进程")
         
-        col1, col2 = st.columns([2,1])
+        # 时间线可视化
+        timeline_df = pd.DataFrame([
+            {"阶段": "会前准备", "状态": "已完成", "耗时": "2h", "负责人": "系统自动"},
+            {"阶段": "证据调取", "状态": "进行中", "耗时": "1h", "负责人": "内审部"},
+            {"阶段": "多方听证", "状态": "待处理", "耗时": "3h", "负责人": "仲裁主席"},
+            {"阶段": "决议生成", "状态": "待处理", "耗时": "1h", "负责人": "AI顾问"}
+        ])
+        
+        col1, col2 = st.columns([3,1])
         with col1:
-            st.markdown("**动态影响预测**")
-            st.metric("供应商流失概率", "42%", 
-                     delta="+15% vs基准", 
-                     help="基于历史相似案例计算")
-            st.metric("合规风险值", "68/100", 
-                     delta_color="inverse",
-                     help="法务AI风险评估结果")
-            st.metric("成本波动区间", "±8%", 
-                     help="财务模型预测范围")
+            st.markdown("**会议进程甘特图**")
+            fig = px.timeline(timeline_df, 
+                            x_start="耗时", 
+                            x_end="耗时",
+                            y="阶段", 
+                            color="状态",
+                            title="仲裁进度跟踪",
+                            color_discrete_map={
+                                "已完成": "#4CAF50",
+                                "进行中": "#FFC107",
+                                "待处理": "#E0E0E0"
+                            })
+            st.plotly_chart(fig, use_container_width=True)
             
         with col2:
-            st.markdown("**处置方案生成**")
-            resolution = st.selectbox("选择历史方案", [
-                "直接通过", 
-                "有条件通过",
-                "暂缓处理",
-                "终止合作"
-            ])
-            st.code(f"""应用方案：{resolution}
-生效条件：
-- 首付款 ≤40%
-- 风险保证金 ≥5%
-- 试用期 ≤6个月""")
+            st.markdown("**联系人矩阵**")
+            contact_matrix = pd.DataFrame([
+                ["采购代表", "王悦", "采购专员", "wangyue@demo.com"],
+                ["法务代表", "张涛", "法务经理", "zhangtao@demo.com"],
+                ["财务代表", "陈敏", "财务总监", "chenmin@demo.com"],
+                ["仲裁主席", "李航", "供应链总监", "lihang@demo.com"]
+            ], columns=["角色", "姓名", "职位", "联系方式"])
+            st.dataframe(contact_matrix, hide_index=True)
             
+        # 新增决策参数看板
+        st.markdown("---")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown("**外部环境指标**")
+            st.metric("行业风险指数", "58.2", delta="+2.1 vs上月", 
+                      help="来源：行业监管数据平台")
+            st.metric("原材料价格趋势", "↑3.2%", delta_color="inverse",
+                     help="本月大宗商品价格波动")
+            
+        with c2:
+            st.markdown("**企业风控参数**")
+            st.metric("最大风险容忍度", "75/100", 
+                     help="董事会设定年度阈值")
+            st.metric("紧急采购溢价上限", "15%", 
+                     help="特殊情况下允许的溢价空间")
+            
+        with c3:
+            st.markdown("**实时投票机制**")
+            vote_status = st.radio("模拟表决选项", 
+                                  ["赞成", "有条件通过", "否决"], 
+                                  horizontal=True)
+            st.progress(66, f"当前共识度：66%")
+            st.caption("需达成>60%共识方可生效")
+    
+    # 新增系统连携标签页
     with tab3:
-        st.subheader("阶段3：执行追踪矩阵")
-        task_df = pd.DataFrame([
-            ["合同修订", "法务部", "内审部", "风险<30"],
-            ["付款调整", "财务部", "供应链部", "偏差<5%"],
-            ["关系维护", "采购部", "客户成功部", "评分≥4"]
-        ], columns=["任务", "执行方", "监督方", "验收标准"])
+        st.subheader("关联系统拓扑")
         
-        st.dataframe(task_df.style.applymap(
-            lambda x: "background-color: #e6f3ff" if x=="法务部" else ""), 
+        # 系统架构图
+        nodes = pd.DataFrame([
+            {"节点": "链智审核心", "类型": "中枢系统"},
+            {"节点": "ERP", "类型": "业务系统"},
+            {"节点": "合同数据库", "类型": "法务系统"},
+            {"节点": "财务中台", "类型": "财务系统"},
+            {"节点": "舆情监控", "类型": "外部数据"}
+        ])
+        
+        edges = pd.DataFrame([
+            {"来源": "链智审核心", "目标": "ERP", "连接类型": "实时数据"},
+            {"来源": "链智审核心", "目标": "合同数据库", "连接类型": "API调用"},
+            {"来源": "链智审核心", "目标": "财务中台", "连接类型": "双向同步"},
+            {"来源": "链智审核心", "目标": "舆情监控", "连接类型": "数据抓取"}
+        ])
+        
+        fig = px.scatter(nodes, x=[1,2,3,4,5], y=[1,1,1,1,2],
+                        size=[20,15,15,15,15],
+                        color="类型",
+                        text="节点",
+                        title="系统集成拓扑图")
+        
+        for _, edge in edges.iterrows():
+            fig.add_shape(type="line",
+                          x0=1, y0=1, x1=5, y1=2,
+                          line=dict(color="#BDBDBD", width=2))
+            
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # 数据流监控
+        st.markdown("**实时数据流状态**")
+        flow_df = pd.DataFrame([
+            ["ERP→核心", "采购订单", "正常", "5ms"],
+            ["法务→核心", "合同条款", "延迟", "320ms"],
+            ["财务→核心", "成本数据", "正常", "8ms"],
+            ["舆情→核心", "行业风险", "正常", "120ms"]
+        ], columns=["通道", "数据类型", "状态", "延迟"])
+        st.dataframe(flow_df.style.applymap(
+            lambda x: "color: red" if x=="延迟" else None), 
             use_container_width=True)
-        
-        st.button("模拟完成通知", help="点击发送完成通知邮件")
+
 
 # 案例库页
 else:
